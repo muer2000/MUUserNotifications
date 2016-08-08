@@ -9,10 +9,6 @@
 #import "MUNotificationAction.h"
 #import <UIKit/UIKit.h>
 
-//#ifndef 100000
-//    #define 100000 100000
-//#endif
-
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
 #endif
