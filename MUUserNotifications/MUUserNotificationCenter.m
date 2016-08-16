@@ -211,7 +211,7 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
         }];
     }
     else {
-        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationType)MUUNAuthorizationOptionDefault];
+        [application registerForRemoteNotificationTypes:(UIRemoteNotificationType)MUUNAuthorizationOptionDefault];
     }
 }
 
@@ -232,10 +232,6 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         instance = [[self alloc] init];
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-        [UNUserNotificationCenter currentNotificationCenter].delegate = instance;
-#endif
     });
     return instance;
 }
@@ -247,10 +243,9 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
         [application registerForRemoteNotifications];
     }
     else {
-        [[UIApplication sharedApplication] registerForRemoteNotificationTypes:(UIRemoteNotificationType)MUUNAuthorizationOptionDefault];
+        [application registerForRemoteNotificationTypes:(UIRemoteNotificationType)MUUNAuthorizationOptionDefault];
     }
 }
-
 
 - (void)requestAuthorizationWithOptions:(MUUNAuthorizationOptions)options categories:(nullable NSSet<MUNotificationCategory *> *)categories completionHandler:(void (^)(BOOL granted, NSError *__nullable error))completionHandler
 {
@@ -539,9 +534,9 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     }
 }
 
-- (void)p_handleReceiveNotificationWithApplication:(UIApplication *)application response:(MUNotificationResponse *)response
+- (void)p_handleReceiveNotificationWithResponse:(MUNotificationResponse *)response
 {
-    if (application.applicationState == UIApplicationStateActive) {
+    if ([UIApplication sharedApplication].applicationState == UIApplicationStateActive) {
         if ([self.delegate respondsToSelector:@selector(mu_userNotificationCenter:willPresentNotification:)]) {
             [self.delegate mu_userNotificationCenter:self willPresentNotification:response.notification];
         }
@@ -553,7 +548,7 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     }
 }
 
-- (BOOL)p_handleActionWithApplication:(UIApplication *)application response:(MUNotificationResponse *)response completionHandler:(void(^)())completionHandler
+- (BOOL)p_handleActionWithResponse:(MUNotificationResponse *)response completionHandler:(void(^)())completionHandler
 {
     if ([self.delegate respondsToSelector:@selector(mu_userNotificationCenter:didReceiveNotificationResponse:)]) {
         [self.delegate mu_userNotificationCenter:self didReceiveNotificationResponse:response];
@@ -723,7 +718,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification
 {
-    [kCurrentNotificationCenter p_handleReceiveNotificationWithApplication:application response:[notification p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
+    [kCurrentNotificationCenter p_handleReceiveNotificationWithResponse:[notification p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
     
     if ([self respondsToSelector:@selector(muun_application:didReceiveLocalNotification:)]) {
         [self muun_application:application didReceiveLocalNotification:notification];
@@ -734,7 +729,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
 {
-    [kCurrentNotificationCenter p_handleReceiveNotificationWithApplication:application response:[userInfo p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
+    [kCurrentNotificationCenter p_handleReceiveNotificationWithResponse:[userInfo p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
     
     if ([self respondsToSelector:@selector(muun_application:didReceiveRemoteNotification:)]) {
         [self muun_application:application didReceiveRemoteNotification:userInfo];
@@ -743,7 +738,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult result))completionHandler
 {
-    [kCurrentNotificationCenter p_handleReceiveNotificationWithApplication:application response:[userInfo p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
+    [kCurrentNotificationCenter p_handleReceiveNotificationWithResponse:[userInfo p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
     
     if ([self respondsToSelector:@selector(muun_application:didReceiveRemoteNotification:fetchCompletionHandler:)]) {
         [self muun_application:application didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
@@ -754,7 +749,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_application:(UIApplication *)application handleActionWithIdentifier:(nullable NSString *)identifier forLocalNotification:(UILocalNotification *)notification completionHandler:(void(^)())completionHandler
 {
-    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithApplication:application response:[notification p_muResponseWithActionIdentifier:identifier] completionHandler:completionHandler];
+    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithResponse:[notification p_muResponseWithActionIdentifier:identifier] completionHandler:completionHandler];
     
     if ([self respondsToSelector:@selector(muun_application:handleActionWithIdentifier:forLocalNotification:completionHandler:)]) {
         [self muun_application:application handleActionWithIdentifier:identifier forLocalNotification:notification completionHandler:completionHandler];
@@ -766,7 +761,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_application:(UIApplication *)application handleActionWithIdentifier:(nullable NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo completionHandler:(void(^)())completionHandler
 {
-    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithApplication:application response:[userInfo p_muResponseWithActionIdentifier:identifier] completionHandler:completionHandler];
+    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithResponse:[userInfo p_muResponseWithActionIdentifier:identifier] completionHandler:completionHandler];
 
     if ([self respondsToSelector:@selector(muun_application:handleActionWithIdentifier:forRemoteNotification:completionHandler:)]) {
         [self muun_application:application handleActionWithIdentifier:identifier forRemoteNotification:userInfo completionHandler:completionHandler];
@@ -780,7 +775,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_application:(UIApplication *)application handleActionWithIdentifier:(nullable NSString *)identifier forLocalNotification:(UILocalNotification *)notification withResponseInfo:(NSDictionary *)responseInfo completionHandler:(void(^)())completionHandler
 {
-    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithApplication:application response:[notification p_muTextInputResponseWithActionIdentifier:identifier userText:responseInfo[UIUserNotificationActionResponseTypedTextKey]] completionHandler:completionHandler];
+    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithResponse:[notification p_muTextInputResponseWithActionIdentifier:identifier userText:responseInfo[UIUserNotificationActionResponseTypedTextKey]] completionHandler:completionHandler];
     
     if ([self respondsToSelector:@selector(muun_application:handleActionWithIdentifier:forLocalNotification:withResponseInfo:completionHandler:)]) {
         [self muun_application:application handleActionWithIdentifier:identifier forLocalNotification:notification withResponseInfo:responseInfo completionHandler:completionHandler];
@@ -792,7 +787,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_application:(UIApplication *)application handleActionWithIdentifier:(nullable NSString *)identifier forRemoteNotification:(NSDictionary *)userInfo withResponseInfo:(NSDictionary *)responseInfo completionHandler:(void(^)())completionHandler
 {
-    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithApplication:application response:[userInfo p_muTextInputResponseWithActionIdentifier:identifier userText:responseInfo[UIUserNotificationActionResponseTypedTextKey]] completionHandler:completionHandler];
+    BOOL respondsHandler = [kCurrentNotificationCenter p_handleActionWithResponse:[userInfo p_muTextInputResponseWithActionIdentifier:identifier userText:responseInfo[UIUserNotificationActionResponseTypedTextKey]] completionHandler:completionHandler];
 
     if ([self respondsToSelector:@selector(muun_application:handleActionWithIdentifier:forRemoteNotification:withResponseInfo:completionHandler:)]) {
         [self muun_application:application handleActionWithIdentifier:identifier forRemoteNotification:userInfo withResponseInfo:responseInfo completionHandler:completionHandler];

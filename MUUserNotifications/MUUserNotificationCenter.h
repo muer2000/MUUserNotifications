@@ -29,7 +29,9 @@ typedef NS_OPTIONS(NSUInteger, MUUNAuthorizationOptions) {
     MUUNAuthorizationOptionCarPlay  = 1 << 3
 };
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @class UNNotificationSettings;
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 

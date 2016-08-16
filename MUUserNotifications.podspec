@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "MUUserNotifications"
-  s.version      = "0.3"
+  s.version      = "0.3.1"
   s.license      = "MIT"
   s.summary      = "MUUserNotifications API similar to iOS 10 UserNotifications.framework."
   s.homepage     = "https://github.com/muer2000/MUUserNotifications"
