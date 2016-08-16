@@ -13,6 +13,7 @@
 #import "MUNotificationCategory.h"
 #import "MUNotificationRequest.h"
 #import "MUNotificationResponse.h"
+#import "MUNotificationTrigger.h"
 #import "MUNotification.h"
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
@@ -111,14 +112,30 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 }
 #endif
 
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+@interface MUUserNotificationCenter () <UNUserNotificationCenterDelegate>
+#else
 @interface MUUserNotificationCenter ()
+#endif
 
 @property (nonatomic, strong) NSSet<MUNotificationCategory *> *categories;
 @property (nonatomic, copy) void (^requestAuthorizationCompletionHandler)(BOOL granted, NSError *error);
 
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+@property (nonatomic, weak) id<UNUserNotificationCenterDelegate> userNotificationCenterDelegate;
+#endif
+
 @end
 
 @implementation MUUserNotificationCenter
+
++ (void)load
+{
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+    [UNUserNotificationCenter currentNotificationCenter].delegate = [MUUserNotificationCenter currentNotificationCenter];
+#endif
+}
 
 + (MUUNAuthorizationStatus)authorizationStatus
 {
@@ -215,6 +232,10 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         instance = [[self alloc] init];
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+        [UNUserNotificationCenter currentNotificationCenter].delegate = instance;
+#endif
     });
     return instance;
 }
@@ -281,7 +302,7 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     }
     
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-    if (IS_IOS10_OR_GREATER) {
+    if (IS_IOS10_OR_GREATER && ![request.trigger isKindOfClass:[MUClassicNotificationTrigger class]]) {
         [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:[request p_unNotificationRequest] withCompletionHandler:^(NSError * _Nullable error) {
             if (completionHandler) {
                 completionHandler(error);
@@ -428,6 +449,34 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 }
 #endif
 
+
+#pragma mark - UNUserNotificationCenterDelegate
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler
+{
+    [self p_handleWillPresentNotification:[notification p_muNotification] withCompletionHandler:^(MUNotificationPresentationOptions options) {
+        completionHandler((UNNotificationPresentationOptions)options);
+    }];
+
+    if ([self.userNotificationCenterDelegate respondsToSelector:@selector(userNotificationCenter:willPresentNotification:withCompletionHandler:)]) {
+        [self.userNotificationCenterDelegate userNotificationCenter:center willPresentNotification:notification withCompletionHandler:completionHandler];
+    }
+}
+
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler
+{
+    BOOL respondsHandler = [self p_handleDidReceiveNotificationResponse:[response p_muNotificationResponse] withCompletionHandler:completionHandler];
+
+    if ([self.userNotificationCenterDelegate respondsToSelector:@selector(userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:)]) {
+        [self.userNotificationCenterDelegate userNotificationCenter:center didReceiveNotificationResponse:response withCompletionHandler:completionHandler];
+    }
+    else if (!respondsHandler) {
+        completionHandler();
+    }
+}
+#endif
+
 #pragma mark - Private
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
@@ -566,11 +615,11 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
     IMP swizzledSelectorIMP = method_getImplementation(swizzledMethod);
     
     if (!class_addMethod(delegateClass, delegateSelector, swizzledSelectorIMP, method_getTypeEncoding(swizzledMethod))) {
-        class_addMethod(delegateClass, swizzledSelector, swizzledSelectorIMP, method_getTypeEncoding(swizzledMethod));
-        swizzledMethod = class_getInstanceMethod(delegateClass, swizzledSelector);
-        
-        Method originalMethod = class_getInstanceMethod(delegateClass, delegateSelector);
-        method_exchangeImplementations(originalMethod, swizzledMethod);
+        if (class_addMethod(delegateClass, swizzledSelector, swizzledSelectorIMP, method_getTypeEncoding(swizzledMethod))) {
+            swizzledMethod = class_getInstanceMethod(delegateClass, swizzledSelector);
+            Method originalMethod = class_getInstanceMethod(delegateClass, delegateSelector);
+            method_exchangeImplementations(originalMethod, swizzledMethod);
+        }
     }
 }
 
@@ -771,53 +820,11 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 
 - (void)muun_setDelegate:(id<UNUserNotificationCenterDelegate>)delegate
 {
-    static Class delegateClass = nil;
-    // only once
-    if (delegateClass) {
-        // calling the original method (setDelegate:)
-        [self muun_setDelegate:delegate];
-        return;
+    if (self.delegate != [MUUserNotificationCenter currentNotificationCenter]) {
+        [self muun_setDelegate:[MUUserNotificationCenter currentNotificationCenter]];
     }
-
-    delegateClass = MUClassWithProtocolInHierarchy([delegate class], @protocol(UNUserNotificationCenterDelegate));
-    
-    MUSwizzleProtocolSelector(delegateClass,
-                              @selector(userNotificationCenter:willPresentNotification:withCompletionHandler:),
-                              [self class],
-                              @selector(muun_userNotificationCenter:willPresentNotification:withCompletionHandler:));
-    
-    MUSwizzleProtocolSelector(delegateClass,
-                              @selector(userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:),
-                              [self class],
-                              @selector(muun_userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:));
-    
-    // calling the original method (setDelegate:)
-    [self muun_setDelegate:delegate];
-}
-
-
-#pragma mark - Swizzle UNUserNotificationCenterDelegate
-
-- (void)muun_userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler
-{
-    [kCurrentNotificationCenter p_handleWillPresentNotification:[notification p_muNotification] withCompletionHandler:^(MUNotificationPresentationOptions options) {
-        completionHandler((UNNotificationPresentationOptions)options);
-    }];
-
-    if ([self respondsToSelector:@selector(muun_userNotificationCenter:willPresentNotification:withCompletionHandler:)]) {
-        [self muun_userNotificationCenter:center willPresentNotification:notification withCompletionHandler:completionHandler];
-    }
-}
-
-- (void)muun_userNotificationCenter:(UNUserNotificationCenter *)center didReceiveNotificationResponse:(UNNotificationResponse *)response withCompletionHandler:(void(^)())completionHandler
-{
-    BOOL respondsHandler = [kCurrentNotificationCenter p_handleDidReceiveNotificationResponse:[response p_muNotificationResponse] withCompletionHandler:completionHandler];
-    
-    if ([self respondsToSelector:@selector(muun_userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:)]) {
-        [self muun_userNotificationCenter:center didReceiveNotificationResponse:response withCompletionHandler:completionHandler];
-    }
-    else if (!respondsHandler) {
-        completionHandler();
+    if (delegate != [MUUserNotificationCenter currentNotificationCenter]) {
+        [MUUserNotificationCenter currentNotificationCenter].userNotificationCenterDelegate = delegate;
     }
 }
 
