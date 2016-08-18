@@ -119,7 +119,7 @@
         [actions addObject:inputAction];
     }
     
-    MUNotificationCategory *category = [MUNotificationCategory categoryWithIdentifier:@"category-identifier" actions:actions minimalActions:actions];
+    MUNotificationCategory *category = [MUNotificationCategory categoryWithIdentifier:@"category-identifier" actions:actions];
     return [NSSet setWithObject:category];
 }
 

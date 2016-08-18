@@ -18,7 +18,6 @@
 
 @property (nonatomic, copy) NSString *identifier;
 @property (nonatomic, copy) NSArray<MUNotificationAction *> *actions;
-@property (nonatomic, copy) NSArray<MUNotificationAction *> *minimalActions;
 
 @property (nonatomic, assign) MUNotificationCategoryOptions options;
 @property (nonatomic, copy) NSArray<NSString *> *intentIdentifiers;
@@ -27,23 +26,22 @@
 
 @implementation MUNotificationCategory
 
-+ (instancetype)categoryWithIdentifier:(NSString *)identifier actions:(NSArray<MUNotificationAction *> *)actions minimalActions:(nullable NSArray<MUNotificationAction *> *)minimalActions
++ (instancetype)categoryWithIdentifier:(NSString *)identifier actions:(NSArray<MUNotificationAction *> *)actions
 {
-    return [self categoryWithIdentifier:identifier actions:actions minimalActions:minimalActions intentIdentifiers:nil options:MUNotificationCategoryOptionNone];
+    return [self categoryWithIdentifier:identifier actions:actions intentIdentifiers:nil options:MUNotificationCategoryOptionNone];
 }
 
-+ (instancetype)categoryWithIdentifier:(NSString *)identifier actions:(NSArray<MUNotificationAction *> *)actions minimalActions:(nullable NSArray<MUNotificationAction *> *)minimalActions intentIdentifiers:(nullable NSArray<NSString *> *)intentIdentifiers options:(MUNotificationCategoryOptions)options
++ (instancetype)categoryWithIdentifier:(NSString *)identifier actions:(NSArray<MUNotificationAction *> *)actions intentIdentifiers:(nullable NSArray<NSString *> *)intentIdentifiers options:(MUNotificationCategoryOptions)options
 {
-    return [[self alloc] initWithIdentifier:identifier actions:actions minimalActions:minimalActions intentIdentifiers:intentIdentifiers options:options];
+    return [[self alloc] initWithIdentifier:identifier actions:actions intentIdentifiers:intentIdentifiers options:options];
 }
 
-- (instancetype)initWithIdentifier:(NSString *)identifier actions:(NSArray<MUNotificationAction *> *)actions minimalActions:(nullable NSArray<MUNotificationAction *> *)minimalActions intentIdentifiers:(nullable NSArray<NSString *> *)intentIdentifiers options:(MUNotificationCategoryOptions)options
+- (instancetype)initWithIdentifier:(NSString *)identifier actions:(NSArray<MUNotificationAction *> *)actions intentIdentifiers:(nullable NSArray<NSString *> *)intentIdentifiers options:(MUNotificationCategoryOptions)options
 {
     self = [super init];
     if (self) {
         self.identifier = identifier;
         self.actions = actions;
-        self.minimalActions = minimalActions;
         self.intentIdentifiers = intentIdentifiers;
         self.options = options;
     }
@@ -52,7 +50,7 @@
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"MUNotificationCategory: %p, identifier: %@, actions: %@, minimalActions: %@, options: %zd, intentIdentifiers: %@", self, self.identifier, self.actions, self.minimalActions, self.options, self.intentIdentifiers];
+    return [NSString stringWithFormat:@"MUNotificationCategory: %p, identifier: %@, actions: %@, options: %zd, intentIdentifiers: %@", self, self.identifier, self.actions, self.options, self.intentIdentifiers];
 }
 
 #pragma mark - NSSecureCoding
@@ -61,7 +59,6 @@
 {
     [aCoder encodeObject:self.identifier forKey:NSStringFromSelector(@selector(identifier))];
     [aCoder encodeObject:self.actions forKey:NSStringFromSelector(@selector(actions))];
-    [aCoder encodeObject:self.minimalActions forKey:NSStringFromSelector(@selector(minimalActions))];
     [aCoder encodeInteger:self.options forKey:NSStringFromSelector(@selector(options))];
     [aCoder encodeObject:self.intentIdentifiers forKey:NSStringFromSelector(@selector(intentIdentifiers))];
 }
@@ -72,7 +69,6 @@
     if (self) {
         self.identifier = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(identifier))];
         self.actions = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(actions))];
-        self.minimalActions = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(minimalActions))];
         self.intentIdentifiers = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(intentIdentifiers))];
         self.options = [aDecoder decodeIntegerForKey:NSStringFromSelector(@selector(options))];
     }
@@ -146,22 +142,15 @@ static NSArray<UNNotificationAction *> * MUUNActionsForMUActions(NSArray<MUNotif
     if (self.actions) {
         [category setActions:MUUIActionsForMUActions(self.actions) forContext:UIUserNotificationActionContextDefault];
     }
-    if (self.minimalActions) {
-        [category setActions:MUUIActionsForMUActions(self.minimalActions) forContext:UIUserNotificationActionContextMinimal];
-    }
     return category;
 }
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationCategory *)p_unNotificationCategory
 {
-    NSArray *actions = MUUNActionsForMUActions(self.actions);
-    NSArray *minimalActions = (self.minimalActions == nil) ? actions : MUUNActionsForMUActions(self.minimalActions);
-    
     return [UNNotificationCategory categoryWithIdentifier:self.identifier
-                                                  actions:actions
-                                           minimalActions:minimalActions
-                                        intentIdentifiers:self.intentIdentifiers ? : @[]
+                                                  actions:MUUNActionsForMUActions(self.actions)
+                                        intentIdentifiers:self.intentIdentifiers
                                                   options:(UNNotificationCategoryOptions)self.options];
 }
 #endif
