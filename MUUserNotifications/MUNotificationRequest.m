@@ -142,6 +142,7 @@ static NSString * const MUUILocalNotificationUserInfoIdentifierKey = @"MUUILocal
     if ([localNotification respondsToSelector:@selector(setAlertTitle:)]) {
         localNotification.alertTitle = content.title;
     }
+    localNotification.alertAction = content.alertAction;
     localNotification.alertLaunchImage = content.launchImageName;
     localNotification.applicationIconBadgeNumber = [content.badge integerValue];
     if ([localNotification respondsToSelector:@selector(setCategory:)]) {
@@ -205,6 +206,7 @@ static NSString * const MUUILocalNotificationUserInfoIdentifierKey = @"MUUILocal
     if ([self respondsToSelector:@selector(setAlertTitle:)]) {
         muContent.title = self.alertTitle;
     }
+    muContent.alertAction = self.alertAction;
     muContent.launchImageName = self.alertLaunchImage;
     muContent.badge = @(self.applicationIconBadgeNumber);
     if ([self respondsToSelector:@selector(setCategory:)]) {

@@ -21,7 +21,7 @@ if (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_8_4) {
     [actions addObject:inputAction];
 }
 
-MUNotificationCategory *category = [MUNotificationCategory categoryWithIdentifier:@"category-identifier" actions:actions minimalActions:actions];
+MUNotificationCategory *category = [MUNotificationCategory categoryWithIdentifier:@"category-identifier" actions:actions];
 
 [[MUUserNotificationCenter currentNotificationCenter] requestAuthorizationWithOptions:MUUNAuthorizationOptionBadge | MUUNAuthorizationOptionAlert | MUUNAuthorizationOptionSound categories:[NSSet setWithObject:category] completionHandler:^(BOOL granted, NSError * _Nullable error) {
     NSLog(@"requestAuthorizatio granted: %d, error: %@", granted, error);
