@@ -149,6 +149,12 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     BOOL determined = [[NSUserDefaults standardUserDefaults] boolForKey:MUUserNotificationDeterminedKey];
     if (determined) {
         UIApplication *application = [UIApplication sharedApplication];
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+        if ([application currentUserNotificationSettings].types == UIUserNotificationTypeNone) {
+            return MUUNAuthorizationStatusDenied;
+        }
+        return MUUNAuthorizationStatusAuthorized;
+#else
         if ([application respondsToSelector:@selector(currentUserNotificationSettings)]) {
             if ([application currentUserNotificationSettings].types == UIUserNotificationTypeNone) {
                 return MUUNAuthorizationStatusDenied;
@@ -161,6 +167,7 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
             }
             return MUUNAuthorizationStatusAuthorized;
         }
+#endif
     }
     else {
         return MUUNAuthorizationStatusNotDetermined;
@@ -190,19 +197,27 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     }
 #endif
     
-    // iOS 10 before
     UIApplication *application = [UIApplication sharedApplication];
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+    return (MUUNAuthorizationOptions)[application currentUserNotificationSettings].types;
+#else
     if ([application respondsToSelector:@selector(currentUserNotificationSettings)]) {
         return (MUUNAuthorizationOptions)[application currentUserNotificationSettings].types;
     }
-    
-    // iOS 8 before
     return (MUUNAuthorizationOptions)[application enabledRemoteNotificationTypes];
+#endif
 }
 
 + (void)registerRemoteNotifications
 {
     UIApplication *application = [UIApplication sharedApplication];
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+    [[self currentNotificationCenter] requestAuthorizationWithOptions:MUUNAuthorizationOptionDefault categories:nil completionHandler:^(BOOL granted, NSError *error) {
+        if (granted) {
+            [application registerForRemoteNotifications];
+        }
+    }];
+#else
     if ([application respondsToSelector:@selector(registerForRemoteNotifications)]) {
         [[self currentNotificationCenter] requestAuthorizationWithOptions:MUUNAuthorizationOptionDefault categories:nil completionHandler:^(BOOL granted, NSError *error) {
             if (granted) {
@@ -213,17 +228,22 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
     else {
         [application registerForRemoteNotificationTypes:(UIRemoteNotificationType)MUUNAuthorizationOptionDefault];
     }
+#endif
 }
 
 + (BOOL)isRegisteredForRemoteNotifications
 {
     UIApplication *application = [UIApplication sharedApplication];
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+    return [application isRegisteredForRemoteNotifications];
+#else
     if ([application respondsToSelector:@selector(isRegisteredForRemoteNotifications)]) {
         return [application isRegisteredForRemoteNotifications];
     }
     
     UIRemoteNotificationType types = [application enabledRemoteNotificationTypes];
     return (types & UIRemoteNotificationTypeBadge) || (types & UIRemoteNotificationTypeSound) || (types & UIRemoteNotificationTypeAlert);
+#endif
 }
 
 + (MUUserNotificationCenter *)currentNotificationCenter
@@ -239,12 +259,16 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 - (void)registerForRemoteNotifications
 {
     UIApplication *application = [UIApplication sharedApplication];
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+    [application registerForRemoteNotifications];
+#else
     if ([application respondsToSelector:@selector(registerForRemoteNotifications)]) {
         [application registerForRemoteNotifications];
     }
     else {
         [application registerForRemoteNotificationTypes:(UIRemoteNotificationType)MUUNAuthorizationOptionDefault];
     }
+#endif
 }
 
 - (void)requestAuthorizationWithOptions:(MUUNAuthorizationOptions)options categories:(nullable NSSet<MUNotificationCategory *> *)categories completionHandler:(void (^)(BOOL granted, NSError *__nullable error))completionHandler
@@ -632,7 +656,11 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
         method_exchangeImplementations(originalMethod, swizzledMethod);
         
         if (!IS_IOS10_OR_GREATER) {
-            if ((floor(NSFoundationVersionNumber) >= NSFoundationVersionNumber_iOS_8_0)) {
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
+            originalMethod = class_getInstanceMethod([self class], @selector(registerUserNotificationSettings:));
+            swizzledMethod = class_getInstanceMethod([self class], @selector(muun_registerUserNotificationSettings:));
+#else
+            if ([UIApplication instancesRespondToSelector:@selector(registerUserNotificationSettings:)]) {
                 originalMethod = class_getInstanceMethod([self class], @selector(registerUserNotificationSettings:));
                 swizzledMethod = class_getInstanceMethod([self class], @selector(muun_registerUserNotificationSettings:));
             }
@@ -640,6 +668,7 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
                 originalMethod = class_getInstanceMethod([self class], @selector(registerForRemoteNotificationTypes:));
                 swizzledMethod = class_getInstanceMethod([self class], @selector(muun_registerForRemoteNotificationTypes:));
             }
+#endif
             method_exchangeImplementations(originalMethod, swizzledMethod);
         }
     });
@@ -697,11 +726,13 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
     [self muun_registerUserNotificationSettings:notificationSettings];
 }
 
+#if __IPHONE_OS_VERSION_MIN_REQUIRED < 80000
 - (void)muun_registerForRemoteNotificationTypes:(UIRemoteNotificationType)types
 {
     [kCurrentNotificationCenter p_handleUndeterminedTag];
     [self muun_registerForRemoteNotificationTypes:types];
 }
+#endif
 
 #pragma mark - Swizzle UIApplicationDelegate
 

@@ -51,7 +51,6 @@
 		16FE67861D51CADF002A98FB /* MUNotificationTrigger.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MUNotificationTrigger.m; sourceTree = "<group>"; };
 		16FE67871D51CADF002A98FB /* MUUserNotificationCenter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MUUserNotificationCenter.h; sourceTree = "<group>"; };
 		16FE67881D51CADF002A98FB /* MUUserNotificationCenter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MUUserNotificationCenter.m; sourceTree = "<group>"; };
-		16FEB0511D531FBA007AE5CA /* MUUserNotificationsExample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = MUUserNotificationsExample.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,7 +84,6 @@
 		16FE675F1D51C9E5002A98FB /* MUUserNotificationsExample */ = {
 			isa = PBXGroup;
 			children = (
-				16FEB0511D531FBA007AE5CA /* MUUserNotificationsExample.entitlements */,
 				16FE67631D51C9E5002A98FB /* AppDelegate.h */,
 				16FE67641D51C9E5002A98FB /* AppDelegate.m */,
 				16FE67661D51C9E5002A98FB /* ViewController.h */,
@@ -165,7 +163,7 @@
 						ProvisioningStyle = Manual;
 						SystemCapabilities = {
 							com.apple.Push = {
-								enabled = 1;
+								enabled = 0;
 							};
 						};
 					};
@@ -332,7 +330,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
-				CODE_SIGN_ENTITLEMENTS = MUUserNotificationsExample/MUUserNotificationsExample.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -354,7 +351,6 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
-				CODE_SIGN_ENTITLEMENTS = MUUserNotificationsExample/MUUserNotificationsExample.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
