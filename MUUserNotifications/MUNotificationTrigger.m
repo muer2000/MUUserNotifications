@@ -129,6 +129,11 @@
 #endif
 }
 
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<%@: %p>, timeInterval: %f, repeats: %d", NSStringFromClass([self class]), self, self.timeInterval, self.repeats];
+}
+
 #pragma mark - NSSecureCoding
 
 - (void)encodeWithCoder:(NSCoder *)aCoder
@@ -179,6 +184,11 @@
 #else
     return nil;
 #endif
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<%@: %p>, dateComponents: %@, repeats: %d", NSStringFromClass([self class]), self, self.dateComponents, self.repeats];
 }
 
 #pragma mark - NSSecureCoding

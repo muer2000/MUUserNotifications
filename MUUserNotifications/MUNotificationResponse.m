@@ -160,10 +160,10 @@ NSString *const MUNotificationDismissActionIdentifier = @"MUNotificationDismissA
 {
     MUNotification *muNotification = [self.notification p_muNotification];
     NSString *actionIdentifier = self.actionIdentifier;
-    if (actionIdentifier == UNNotificationDefaultActionIdentifier) {
+    if ([actionIdentifier isEqualToString:UNNotificationDefaultActionIdentifier]) {
         actionIdentifier = MUNotificationDefaultActionIdentifier;
     }
-    else if (actionIdentifier == UNNotificationDismissActionIdentifier) {
+    else if ([actionIdentifier isEqualToString:UNNotificationDismissActionIdentifier]) {
         actionIdentifier = MUNotificationDismissActionIdentifier;
     }
     
