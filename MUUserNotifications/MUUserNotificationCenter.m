@@ -133,7 +133,14 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 + (void)load
 {
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-    [UNUserNotificationCenter currentNotificationCenter].delegate = [MUUserNotificationCenter currentNotificationCenter];
+    if (IS_IOS10_OR_GREATER) {
+        [UNUserNotificationCenter currentNotificationCenter].delegate = [MUUserNotificationCenter currentNotificationCenter];
+    }
+    else {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationDidFinishLaunchingNotification:) name:UIApplicationDidFinishLaunchingNotification object:nil];
+    }
+#else
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationDidFinishLaunchingNotification:) name:UIApplicationDidFinishLaunchingNotification object:nil];
 #endif
 }
 
@@ -542,6 +549,19 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 }
 #endif
 
++ (void)p_applicationDidFinishLaunchingNotification:(NSNotification *)notification
+{
+    NSDictionary *remoteNotificationInfo = notification.userInfo[UIApplicationLaunchOptionsRemoteNotificationKey];
+    if (remoteNotificationInfo && (floor(NSFoundationVersionNumber) < NSFoundationVersionNumber_iOS_7_0 || ![[UIApplication sharedApplication].delegate respondsToSelector:@selector(application:didReceiveRemoteNotification:fetchCompletionHandler:)])) {
+        [[self currentNotificationCenter] p_handleReceiveNotificationWithResponse:[remoteNotificationInfo p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
+    }
+    
+    UILocalNotification *localNotification = notification.userInfo[UIApplicationLaunchOptionsLocalNotificationKey];
+    if (localNotification && [localNotification isKindOfClass:[UILocalNotification class]]) {
+        [[self currentNotificationCenter] p_handleReceiveNotificationWithResponse:[localNotification p_muResponseWithActionIdentifier:MUNotificationDefaultActionIdentifier]];
+    }
+}
+
 - (void)p_handleRegisterUserNotificationCallbackWithSettings:(UIUserNotificationSettings *)settings
 {
     if (self.requestAuthorizationCompletionHandler) {
@@ -564,10 +584,20 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
         if ([self.delegate respondsToSelector:@selector(mu_userNotificationCenter:willPresentNotification:)]) {
             [self.delegate mu_userNotificationCenter:self willPresentNotification:response.notification];
         }
+        
+        if ([self.delegate respondsToSelector:@selector(mu_userNotificationCenter:willPresentNotification:withCompletionHandler:)]) {
+            [self.delegate mu_userNotificationCenter:self willPresentNotification:response.notification withCompletionHandler:^(MUNotificationPresentationOptions options) {
+            }];
+        }
     }
     else {
         if ([self.delegate respondsToSelector:@selector(mu_userNotificationCenter:didReceiveNotificationResponse:)]) {
             [self.delegate mu_userNotificationCenter:self didReceiveNotificationResponse:response];
+        }
+        
+        if ([self.delegate respondsToSelector:@selector(mu_userNotificationCenter:didReceiveNotificationResponse:withCompletionHandler:)]) {
+            [self.delegate mu_userNotificationCenter:self didReceiveNotificationResponse:response withCompletionHandler:^{
+            }];
         }
     }
 }
