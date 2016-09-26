@@ -32,9 +32,11 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 
 @interface MUNotificationCategory (MUPrivate)
 
-- (UIUserNotificationCategory *)p_uiNotificationCategory;
++ (NSMutableSet <UIUserNotificationCategory *> *)p_UICategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
++ (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUICategories:(NSSet<UIUserNotificationCategory *> *)uiCategories;
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-- (UNNotificationCategory *)p_unNotificationCategory;
++ (NSMutableSet <UNNotificationCategory *> *)p_UNCategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
++ (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUNCategories:(NSSet<UNNotificationCategory *> *)unCategories;
 #endif
 
 @end
@@ -88,38 +90,12 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 @end
 #endif
 
-static NSSet<UIUserNotificationCategory *> * MUUICategoriesForMUCategories(NSSet<MUNotificationCategory *> *muCategories) {
-    if (!muCategories) {
-        return nil;
-    }
-    NSMutableSet *mutableSet = [NSMutableSet set];
-    [muCategories enumerateObjectsUsingBlock:^(MUNotificationCategory * _Nonnull obj, BOOL * _Nonnull stop) {
-        [mutableSet addObject:[obj p_uiNotificationCategory]];
-    }];
-    return mutableSet;
-}
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUNotificationCategory *> *muCategories) {
-    if (!muCategories) {
-        return nil;
-    }
-    NSMutableSet *mutableSet = [NSMutableSet set];
-    [muCategories enumerateObjectsUsingBlock:^(MUNotificationCategory * _Nonnull obj, BOOL * _Nonnull stop) {
-        [mutableSet addObject:[obj p_unNotificationCategory]];
-    }];
-    return mutableSet;
-}
-#endif
-
-
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface MUUserNotificationCenter () <UNUserNotificationCenterDelegate>
 #else
 @interface MUUserNotificationCenter ()
 #endif
 
-@property (nonatomic, strong) NSSet<MUNotificationCategory *> *categories;
 @property (nonatomic, copy) void (^requestAuthorizationCompletionHandler)(BOOL granted, NSError *error);
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
@@ -286,34 +262,34 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
         }
         return;
     }
-    
-    self.categories = categories;
-    
+        
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         UNUserNotificationCenter *currentCenter = [UNUserNotificationCenter currentNotificationCenter];
         [currentCenter requestAuthorizationWithOptions:(UNAuthorizationOptions)options completionHandler:^(BOOL granted, NSError * _Nullable error) {
-            if (granted && categories) {
-                [currentCenter setNotificationCategories:MUUNCategoriesForMUCategories(categories)];
-            }
-            
-            if (completionHandler) {
-                completionHandler(granted, error);
-            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (granted && categories) {
+                    [currentCenter setNotificationCategories:[MUNotificationCategory p_UNCategoriesForMUCategories:categories]];
+                }
+                
+                if (completionHandler) {
+                    completionHandler(granted, error);
+                }
+            });
         }];
     }
     else {
         if (completionHandler) {
             self.requestAuthorizationCompletionHandler = completionHandler;
         }
-        UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:(UIUserNotificationType)options categories:MUUICategoriesForMUCategories(categories)];
+        UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:(UIUserNotificationType)options categories:[MUNotificationCategory p_UICategoriesForMUCategories:categories]];
         [[UIApplication sharedApplication] registerUserNotificationSettings:settings];
     }
 #else
     if (completionHandler) {
         self.requestAuthorizationCompletionHandler = completionHandler;
     }
-    UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:(UIUserNotificationType)options categories:MUUICategoriesForMUCategories(categories)];
+    UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:(UIUserNotificationType)options categories:[MUNotificationCategory p_UICategoriesForMUCategories:categories]];
     [[UIApplication sharedApplication] registerUserNotificationSettings:settings];
 #endif
 }
@@ -330,9 +306,11 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER && ![request.trigger isKindOfClass:[MUClassicNotificationTrigger class]]) {
         [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:[request p_unNotificationRequest] withCompletionHandler:^(NSError * _Nullable error) {
-            if (completionHandler) {
-                completionHandler(error);
-            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (completionHandler) {
+                    completionHandler(error);
+                }
+            });
         }];
     }
     else {
@@ -468,6 +446,34 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 
 #pragma mark - Property get methods
 
+- (NSSet<MUNotificationCategory *> *)categories
+{
+    NSMutableSet *mutableCategories = nil;
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+    if (IS_IOS10_OR_GREATER) {
+        NSSet<UNNotificationCategory *> *unCategories = [MUUserNotificationCenter p_currentNotificationCategories];
+        mutableCategories = [MUNotificationCategory p_MUCategoriesForUNCategories:unCategories];
+    }
+    
+    NSSet<UIUserNotificationCategory *> *uiCategories = [UIApplication sharedApplication].currentUserNotificationSettings.categories;
+    if (uiCategories.count > 0) {
+        if (!mutableCategories) {
+            mutableCategories = [NSMutableSet set];
+        }
+        [mutableCategories unionSet:[MUNotificationCategory p_MUCategoriesForUICategories:uiCategories]];
+    }
+#else
+    NSSet<UIUserNotificationCategory *> *uiCategories = [UIApplication sharedApplication].currentUserNotificationSettings.categories;
+    if (uiCategories.count > 0) {
+        if (!mutableCategories) {
+            mutableCategories = [NSMutableSet set];
+        }
+        [mutableCategories unionSet:[MUNotificationCategory p_MUCategoriesForUICategories:uiCategories]];
+    }
+#endif
+    return mutableCategories;
+}
+
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationSettings *)settings
 {
@@ -506,6 +512,20 @@ static NSSet<UNNotificationCategory *> * MUUNCategoriesForMUCategories(NSSet<MUN
 #pragma mark - Private
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
++ (NSSet<UNNotificationCategory *> *)p_currentNotificationCategories
+{
+    __block NSSet<UNNotificationCategory *> *bCategories = nil;
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+    
+    [[UNUserNotificationCenter currentNotificationCenter] getNotificationCategoriesWithCompletionHandler:^(NSSet<UNNotificationCategory *> * _Nonnull categories) {
+        bCategories = categories;
+        dispatch_semaphore_signal(semaphore);
+    }];
+    
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+    return bCategories;
+}
+
 + (UNNotificationSettings *)p_currentNotificationSettings
 {
     __block UNNotificationSettings *bSettings = nil;

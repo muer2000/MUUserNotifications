@@ -99,59 +99,135 @@
 
 @end
 
+@interface UIUserNotificationAction (MUPrivate)
 
-@interface MUNotificationCategory (MUPrivate)
-
-- (UIUserNotificationCategory *)p_uiNotificationCategory;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-- (UNNotificationCategory *)p_unNotificationCategory;
-#endif
+- (MUNotificationAction *)p_muNotificationAction;
 
 @end
 
-static NSArray<UIUserNotificationAction *> * MUUIActionsForMUActions(NSArray<MUNotificationAction *> *muActions) {
-    if (!muActions) {
-        return nil;
-    }
-    NSMutableArray *mutableActions = [NSMutableArray array];
-    [muActions enumerateObjectsUsingBlock:^(MUNotificationAction * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        [mutableActions addObject:[obj p_uiNotificationAction]];
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+@interface UNNotificationAction (MUPrivate)
+
+- (MUNotificationAction *)p_muNotificationAction;
+
+@end
+#endif
+
+@implementation UIUserNotificationCategory (MUPrivate)
+
+- (MUNotificationCategory *)p_muNotificationCategory
+{
+    NSMutableArray<MUNotificationAction *> *mutableActions = [NSMutableArray array];
+    NSArray<UIUserNotificationAction *> *uiActions = [self actionsForContext:UIUserNotificationActionContextDefault];
+    [uiActions enumerateObjectsUsingBlock:^(UIUserNotificationAction * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [mutableActions addObject:[obj p_muNotificationAction]];
     }];
-    return mutableActions;
+    return [MUNotificationCategory categoryWithIdentifier:self.identifier actions:mutableActions];
 }
 
+@end
+
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-static NSArray<UNNotificationAction *> * MUUNActionsForMUActions(NSArray<MUNotificationAction *> *muActions) {
-    if (!muActions) {
-        return nil;
-    }
-    NSMutableArray *mutableActions = [NSMutableArray array];
-    [muActions enumerateObjectsUsingBlock:^(MUNotificationAction * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        [mutableActions addObject:[obj p_unNotificationAction]];
+@implementation UNNotificationCategory (MUPrivate)
+
+- (MUNotificationCategory *)p_muNotificationCategory
+{
+    NSMutableArray<MUNotificationAction *> *mutableActions = [NSMutableArray array];
+    [self.actions enumerateObjectsUsingBlock:^(UNNotificationAction * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [mutableActions addObject:[obj p_muNotificationAction]];
     }];
-    return mutableActions;
+    return [MUNotificationCategory categoryWithIdentifier:self.identifier actions:mutableActions];
 }
+
+@end
 #endif
+
+@interface MUNotificationCategory (MUPrivate)
+
++ (NSMutableSet <UIUserNotificationCategory *> *)p_UICategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
++ (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUICategories:(NSSet<UIUserNotificationCategory *> *)uiCategories;
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
++ (NSMutableSet <UNNotificationCategory *> *)p_UNCategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
++ (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUNCategories:(NSSet<UNNotificationCategory *> *)unCategories;
+#endif
+
+@end
 
 @implementation MUNotificationCategory (MUPrivate)
 
 - (UIUserNotificationCategory *)p_uiNotificationCategory
 {
+    NSMutableArray<UIUserNotificationAction *> *mutableActions = [NSMutableArray array];
+    [self.actions enumerateObjectsUsingBlock:^(MUNotificationAction * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [mutableActions addObject:[obj p_uiNotificationAction]];
+    }];
+    
     UIMutableUserNotificationCategory *category = [[UIMutableUserNotificationCategory alloc] init];
     category.identifier = self.identifier;
-    if (self.actions) {
-        [category setActions:MUUIActionsForMUActions(self.actions) forContext:UIUserNotificationActionContextDefault];
-    }
+    [category setActions:mutableActions forContext:UIUserNotificationActionContextDefault];
     return category;
+}
+
++ (NSMutableSet <UIUserNotificationCategory *> *)p_UICategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories
+{
+    if (!muCategories || muCategories.count == 0) {
+        return nil;
+    }
+    NSMutableSet <UIUserNotificationCategory *> *mutableSet = [NSMutableSet set];
+    [muCategories enumerateObjectsUsingBlock:^(MUNotificationCategory * _Nonnull obj, BOOL * _Nonnull stop) {
+        [mutableSet addObject:[obj p_uiNotificationCategory]];
+    }];
+    return mutableSet;
+}
+
++ (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUICategories:(NSSet<UIUserNotificationCategory *> *)uiCategories
+{
+    if (!uiCategories || uiCategories.count == 0) {
+        return nil;
+    }
+    NSMutableSet <MUNotificationCategory *> *mutableSet = [NSMutableSet set];
+    [uiCategories enumerateObjectsUsingBlock:^(UIUserNotificationCategory * _Nonnull obj, BOOL * _Nonnull stop) {
+        [mutableSet addObject:[obj p_muNotificationCategory]];
+    }];
+    return mutableSet;
 }
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationCategory *)p_unNotificationCategory
 {
+    NSMutableArray <UNNotificationAction *> *mutableActions = [NSMutableArray array];
+    [self.actions enumerateObjectsUsingBlock:^(MUNotificationAction * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        [mutableActions addObject:[obj p_unNotificationAction]];
+    }];
+    
     return [UNNotificationCategory categoryWithIdentifier:self.identifier
-                                                  actions:MUUNActionsForMUActions(self.actions)
+                                                  actions:mutableActions
                                         intentIdentifiers:self.intentIdentifiers
                                                   options:(UNNotificationCategoryOptions)self.options];
+}
+
++ (NSMutableSet <UNNotificationCategory *> *)p_UNCategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories
+{
+    if (!muCategories || muCategories.count == 0) {
+        return nil;
+    }
+    NSMutableSet <UNNotificationCategory *> *mutableSet = [NSMutableSet set];
+    [muCategories enumerateObjectsUsingBlock:^(MUNotificationCategory * _Nonnull obj, BOOL * _Nonnull stop) {
+        [mutableSet addObject:[obj p_unNotificationCategory]];
+    }];
+    return mutableSet;
+}
+
++ (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUNCategories:(NSSet<UNNotificationCategory *> *)unCategories
+{
+    if (!unCategories || unCategories.count == 0) {
+        return nil;
+    }
+    NSMutableSet <MUNotificationCategory *> *mutableSet = [NSMutableSet set];
+    [unCategories enumerateObjectsUsingBlock:^(UNNotificationCategory * _Nonnull obj, BOOL * _Nonnull stop) {
+        [mutableSet addObject:[obj p_muNotificationCategory]];
+    }];
+    return mutableSet;
 }
 #endif
 

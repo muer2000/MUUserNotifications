@@ -188,11 +188,76 @@
     // iOS 9 text input action
     if ([self isKindOfClass:[MUTextInputNotificationAction class]]) {
         MUTextInputNotificationAction *inputAction = (MUTextInputNotificationAction *)self;
-        return [UNTextInputNotificationAction actionWithIdentifier:self.identifier title:self.title options:(UNNotificationActionOptions)self.options textInputButtonTitle:inputAction.textInputButtonTitle textInputPlaceholder:inputAction.textInputPlaceholder];
+        return [UNTextInputNotificationAction actionWithIdentifier:self.identifier
+                                                             title:self.title
+                                                           options:(UNNotificationActionOptions)self.options
+                                              textInputButtonTitle:inputAction.textInputButtonTitle
+                                              textInputPlaceholder:inputAction.textInputPlaceholder];
     }
     
-    return [UNNotificationAction actionWithIdentifier:self.identifier title:self.title options:(UNNotificationActionOptions)self.options];
+    return [UNNotificationAction actionWithIdentifier:self.identifier
+                                                title:self.title
+                                              options:(UNNotificationActionOptions)self.options];
 }
 #endif
 
 @end
+
+@interface UIUserNotificationAction (MUPrivate)
+
+- (MUNotificationAction *)p_muNotificationAction;
+
+@end
+
+@implementation UIUserNotificationAction (MUPrivate)
+
+- (MUNotificationAction *)p_muNotificationAction
+{
+    MUNotificationActionOptions muActionOptions = 0;
+    if (self.activationMode == UIUserNotificationActivationModeForeground) {
+        muActionOptions |= MUNotificationActionOptionForeground;
+    }
+    if (self.authenticationRequired) {
+        muActionOptions |= MUNotificationActionOptionAuthenticationRequired;
+    }
+    if (self.isDestructive) {
+        muActionOptions |= MUNotificationActionOptionDestructive;
+    }
+    
+    if ([self respondsToSelector:@selector(behavior)] && self.behavior == UIUserNotificationActionBehaviorTextInput) {
+        return [MUTextInputNotificationAction actionWithIdentifier:self.identifier
+                                                             title:self.title
+                                                           options:muActionOptions
+                                              textInputButtonTitle:self.parameters[UIUserNotificationTextInputActionButtonTitleKey]];
+    }
+    return [MUNotificationAction actionWithIdentifier:self.identifier title:self.title options:muActionOptions];
+}
+
+@end
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+@interface UNNotificationAction (MUPrivate)
+
+- (MUNotificationAction *)p_muNotificationAction;
+
+@end
+
+@implementation UNNotificationAction (MUPrivate)
+
+- (MUNotificationAction *)p_muNotificationAction
+{
+    if ([self isKindOfClass:[UNTextInputNotificationAction class]]) {
+        UNTextInputNotificationAction *unInputAction = (UNTextInputNotificationAction *)self;
+        return [MUTextInputNotificationAction actionWithIdentifier:self.identifier
+                                                             title:self.title
+                                                           options:(MUNotificationActionOptions)self.options
+                                              textInputButtonTitle:unInputAction.textInputButtonTitle
+                                              textInputPlaceholder:unInputAction.textInputPlaceholder];
+    }
+    return [MUNotificationAction actionWithIdentifier:self.identifier
+                                                title:self.title
+                                              options:(MUNotificationActionOptions)self.options];
+}
+
+@end
+#endif
