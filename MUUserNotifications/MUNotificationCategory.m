@@ -9,10 +9,7 @@
 #import "MUNotificationCategory.h"
 #import <UIKit/UIKit.h>
 #import "MUNotificationAction.h"
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
-#endif
 
 @interface MUNotificationCategory ()
 
@@ -93,9 +90,7 @@
 @interface MUNotificationAction (MUPrivate)
 
 - (UIUserNotificationAction *)p_uiNotificationAction;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationAction *)p_unNotificationAction;
-#endif
 
 @end
 
@@ -105,13 +100,11 @@
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotificationAction (MUPrivate)
 
 - (MUNotificationAction *)p_muNotificationAction;
 
 @end
-#endif
 
 @implementation UIUserNotificationCategory (MUPrivate)
 
@@ -127,7 +120,6 @@
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @implementation UNNotificationCategory (MUPrivate)
 
 - (MUNotificationCategory *)p_muNotificationCategory
@@ -140,16 +132,13 @@
 }
 
 @end
-#endif
 
 @interface MUNotificationCategory (MUPrivate)
 
 + (NSMutableSet <UIUserNotificationCategory *> *)p_UICategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
 + (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUICategories:(NSSet<UIUserNotificationCategory *> *)uiCategories;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 + (NSMutableSet <UNNotificationCategory *> *)p_UNCategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
 + (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUNCategories:(NSSet<UNNotificationCategory *> *)unCategories;
-#endif
 
 @end
 
@@ -192,7 +181,6 @@
     return mutableSet;
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationCategory *)p_unNotificationCategory
 {
     NSMutableArray <UNNotificationAction *> *mutableActions = [NSMutableArray array];
@@ -229,6 +217,5 @@
     }];
     return mutableSet;
 }
-#endif
 
 @end

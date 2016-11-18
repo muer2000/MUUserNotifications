@@ -7,18 +7,12 @@
 //
 
 #import "MUNotificationTrigger.h"
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
-#endif
 
 @interface MUNotificationTrigger ()
 
 @property (nonatomic, assign) BOOL repeats;
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @property (nonatomic, strong) UNNotificationTrigger *unTrigger;
-#endif
 
 @end
 
@@ -33,7 +27,6 @@
     return self;
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationTrigger *)unTrigger
 {
     if (_unTrigger == nil) {
@@ -49,7 +42,6 @@
     }
     return _unTrigger;
 }
-#endif
 
 #pragma mark - NSSecureCoding
 
@@ -122,11 +114,7 @@
 
 - (nullable NSDate *)nextTriggerDate
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     return [(UNTimeIntervalNotificationTrigger *)self.unTrigger nextTriggerDate];
-#else
-    return nil;
-#endif
 }
 
 - (NSString *)description
@@ -179,11 +167,7 @@
 
 - (nullable NSDate *)nextTriggerDate
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     return [(UNCalendarNotificationTrigger *)self.unTrigger nextTriggerDate];
-#else
-    return nil;
-#endif
 }
 
 - (NSString *)description
@@ -339,24 +323,19 @@
 
 @interface MUNotificationTrigger (MUPrivate)
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationTrigger *)p_unNotificationTrigger;
-#endif
 
 @end
 
 @implementation MUNotificationTrigger (MUPrivate)
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationTrigger *)p_unNotificationTrigger
 {
     return self.unTrigger;
 }
-#endif
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotificationTrigger (MUPrivate)
 
 - (MUNotificationTrigger *)p_muNotificationTrigger;
@@ -383,4 +362,3 @@
 }
 
 @end
-#endif

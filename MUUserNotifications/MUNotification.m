@@ -8,10 +8,7 @@
 
 #import "MUNotification.h"
 #import "MUNotificationRequest.h"
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
-#endif
 
 @interface MUNotification ()
 
@@ -79,7 +76,6 @@
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotificationRequest (MUPrivate)
 
 - (MUNotificationRequest *)p_muNotificationRequest;
@@ -100,4 +96,3 @@
 }
 
 @end
-#endif

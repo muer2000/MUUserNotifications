@@ -11,28 +11,20 @@
 #import "MUNotificationTrigger.h"
 #import "MUNotification.h"
 #import "MUNotificationResponse.h"
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
-#endif
 
 static NSString * const MUUILocalNotificationUserInfoIdentifierKey = @"MUUILocalNotificationUserInfoIdentifierKey";
 
 @interface MUNotificationTrigger (MUPrivate)
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationTrigger *)p_unNotificationTrigger;
-#endif
 
 @end
 
 @interface MUNotificationContent (MUPrivate)
 
 - (NSString *)p_soundName;
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationContent *)p_unNotificationContent;
-#endif
 
 @end
 
@@ -125,9 +117,7 @@ static NSString * const MUUILocalNotificationUserInfoIdentifierKey = @"MUUILocal
 @interface MUNotificationRequest (MUPrivate)
 
 - (UILocalNotification *)p_uiLocalNotification;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationRequest *)p_unNotificationRequest;
-#endif
 
 @end
 
@@ -175,14 +165,12 @@ static NSString * const MUUILocalNotificationUserInfoIdentifierKey = @"MUUILocal
     return localNotification;
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationRequest *)p_unNotificationRequest
 {
     return [UNNotificationRequest requestWithIdentifier:self.identifier
                                                 content:[self.content p_unNotificationContent]
                                                 trigger:[self.trigger p_unNotificationTrigger]];
 }
-#endif
 
 @end
 
@@ -312,7 +300,6 @@ static NSString * const MUUILocalNotificationUserInfoIdentifierKey = @"MUUILocal
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotificationContent (MUPrivate)
 
 - (MUNotificationContent *)p_muNotificationContent;
@@ -342,4 +329,3 @@ static NSString * const MUUILocalNotificationUserInfoIdentifierKey = @"MUUILocal
 }
 
 @end
-#endif

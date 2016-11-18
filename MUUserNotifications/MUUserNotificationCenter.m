@@ -15,14 +15,7 @@
 #import "MUNotificationResponse.h"
 #import "MUNotificationTrigger.h"
 #import "MUNotification.h"
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
-    @import UserNotifications;
-#endif
-
-#ifndef NSFoundationVersionNumber_iOS_9_x_Max
-    #define NSFoundationVersionNumber_iOS_9_x_Max 1299
-#endif
+@import UserNotifications;
 
 #define IS_IOS10_OR_GREATER (floor(NSFoundationVersionNumber) > NSFoundationVersionNumber_iOS_9_x_Max)
 
@@ -34,19 +27,15 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 
 + (NSMutableSet <UIUserNotificationCategory *> *)p_UICategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
 + (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUICategories:(NSSet<UIUserNotificationCategory *> *)uiCategories;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 + (NSMutableSet <UNNotificationCategory *> *)p_UNCategoriesForMUCategories:(NSSet<MUNotificationCategory *> *)muCategories;
 + (NSMutableSet <MUNotificationCategory *> *)p_MUCategoriesForUNCategories:(NSSet<UNNotificationCategory *> *)unCategories;
-#endif
 
 @end
 
 @interface MUNotificationRequest (MUPrivate)
 
 - (UILocalNotification *)p_uiLocalNotification;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationRequest *)p_unNotificationRequest;
-#endif
 
 @end
 
@@ -70,7 +59,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotificationRequest (MUPrivate)
 
 - (MUNotificationRequest *)p_muNotificationRequest;
@@ -88,19 +76,11 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 - (MUNotificationResponse *)p_muNotificationResponse;
 
 @end
-#endif
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface MUUserNotificationCenter () <UNUserNotificationCenterDelegate>
-#else
-@interface MUUserNotificationCenter ()
-#endif
 
 @property (nonatomic, copy) void (^requestAuthorizationCompletionHandler)(BOOL granted, NSError *error);
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @property (nonatomic, weak) id<UNUserNotificationCenterDelegate> userNotificationCenterDelegate;
-#endif
 
 @end
 
@@ -108,25 +88,19 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 
 + (void)load
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         [UNUserNotificationCenter currentNotificationCenter].delegate = [MUUserNotificationCenter currentNotificationCenter];
     }
     else {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationDidFinishLaunchingNotification:) name:UIApplicationDidFinishLaunchingNotification object:nil];
     }
-#else
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(p_applicationDidFinishLaunchingNotification:) name:UIApplicationDidFinishLaunchingNotification object:nil];
-#endif
 }
 
 + (MUUNAuthorizationStatus)authorizationStatus
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         return (MUUNAuthorizationStatus)[self p_currentNotificationSettings].authorizationStatus;
     }
-#endif
     
     // iOS 10 before
     BOOL determined = [[NSUserDefaults standardUserDefaults] boolForKey:MUUserNotificationDeterminedKey];
@@ -159,7 +133,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 
 + (MUUNAuthorizationOptions)authorizationOptions
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         UNNotificationSettings *settings = [self p_currentNotificationSettings];
         MUUNAuthorizationOptions options = MUUNAuthorizationOptionNone;
@@ -178,7 +151,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
         }
         return options;
     }
-#endif
     
     UIApplication *application = [UIApplication sharedApplication];
 #if __IPHONE_OS_VERSION_MIN_REQUIRED >= 80000
@@ -263,7 +235,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
         return;
     }
         
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         UNUserNotificationCenter *currentCenter = [UNUserNotificationCenter currentNotificationCenter];
         [currentCenter requestAuthorizationWithOptions:(UNAuthorizationOptions)options completionHandler:^(BOOL granted, NSError * _Nullable error) {
@@ -285,13 +256,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
         UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:(UIUserNotificationType)options categories:[MUNotificationCategory p_UICategoriesForMUCategories:categories]];
         [[UIApplication sharedApplication] registerUserNotificationSettings:settings];
     }
-#else
-    if (completionHandler) {
-        self.requestAuthorizationCompletionHandler = completionHandler;
-    }
-    UIUserNotificationSettings *settings = [UIUserNotificationSettings settingsForTypes:(UIUserNotificationType)options categories:[MUNotificationCategory p_UICategoriesForMUCategories:categories]];
-    [[UIApplication sharedApplication] registerUserNotificationSettings:settings];
-#endif
 }
 
 - (void)addNotificationRequest:(MUNotificationRequest *)request withCompletionHandler:(nullable void(^)(NSError *__nullable error))completionHandler
@@ -303,7 +267,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
         return;
     }
     
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER && ![request.trigger isKindOfClass:[MUClassicNotificationTrigger class]]) {
         [[UNUserNotificationCenter currentNotificationCenter] addNotificationRequest:[request p_unNotificationRequest] withCompletionHandler:^(NSError * _Nullable error) {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -325,19 +288,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
             completionHandler(nil);
         }
     }
-#else
-    if (request.trigger) {
-        [[UIApplication sharedApplication] scheduleLocalNotification:[request p_uiLocalNotification]];
-    }
-    else {
-        [[UIApplication sharedApplication] presentLocalNotificationNow:[request p_uiLocalNotification]];
-    }
-    
-    if (completionHandler) {
-        completionHandler(nil);
-    }
-#endif
-    
 }
 
 
@@ -347,7 +297,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 {
     NSMutableArray *mutableRequests = [NSMutableArray array];
     
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         NSArray<UNNotificationRequest *> *requests = [MUUserNotificationCenter p_currentPendingNotificationRequests];
         [requests enumerateObjectsUsingBlock:^(UNNotificationRequest * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -360,12 +309,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
             [mutableRequests addObject:[obj p_muNotificationRequest]];
         }];
     }
-#else
-    NSArray<UILocalNotification *> *notifications = [[UIApplication sharedApplication] scheduledLocalNotifications];
-    [notifications enumerateObjectsUsingBlock:^(UILocalNotification * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        [mutableRequests addObject:[obj p_muNotificationRequest]];
-    }];
-#endif
     
     return mutableRequests;
 }
@@ -376,7 +319,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
         return;
     }
     
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         [[UNUserNotificationCenter currentNotificationCenter] removePendingNotificationRequestsWithIdentifiers:identifiers];
     }
@@ -388,28 +330,16 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
             }
         }
     }
-#else
-    NSArray<UILocalNotification *> *notifications = [[UIApplication sharedApplication] scheduledLocalNotifications];
-    for (UILocalNotification *itemNotification in notifications) {
-        if ([identifiers containsObject:itemNotification.mu_identifier]) {
-            [[UIApplication sharedApplication] cancelLocalNotification:itemNotification];
-        }
-    }
-#endif
 }
 
 - (void)removeAllPendingNotificationRequests
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     if (IS_IOS10_OR_GREATER) {
         [[UNUserNotificationCenter currentNotificationCenter] removeAllPendingNotificationRequests];
     }
     else {
         [[UIApplication sharedApplication] cancelAllLocalNotifications];
     }
-#else
-    [[UIApplication sharedApplication] cancelAllLocalNotifications];
-#endif
 }
 
 
@@ -417,30 +347,22 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 
 - (nullable NSArray<MUNotification *> *)deliveredNotifications
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     NSMutableArray *mutableNotifications = [NSMutableArray array];
     NSArray<UNNotification *> *unNotifications = [MUUserNotificationCenter p_currentDeliveredNotifications];
     [unNotifications enumerateObjectsUsingBlock:^(UNNotification * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         [mutableNotifications addObject:[obj p_muNotification]];
     }];
     return mutableNotifications;
-#else
-    return nil;
-#endif
 }
 
 - (void)removeDeliveredNotificationsWithIdentifiers:(NSArray<NSString *> *)identifiers
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     [[UNUserNotificationCenter currentNotificationCenter] removeDeliveredNotificationsWithIdentifiers:identifiers];
-#endif
 }
 
 - (void)removeAllDeliveredNotifications
 {
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     [[UNUserNotificationCenter currentNotificationCenter] removeAllDeliveredNotifications];
-#endif
 }
 
 
@@ -449,7 +371,7 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
 - (NSSet<MUNotificationCategory *> *)categories
 {
     NSMutableSet *mutableCategories = nil;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
+
     if (IS_IOS10_OR_GREATER) {
         NSSet<UNNotificationCategory *> *unCategories = [MUUserNotificationCenter p_currentNotificationCategories];
         mutableCategories = [MUNotificationCategory p_MUCategoriesForUNCategories:unCategories];
@@ -462,29 +384,18 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
         }
         [mutableCategories unionSet:[MUNotificationCategory p_MUCategoriesForUICategories:uiCategories]];
     }
-#else
-    NSSet<UIUserNotificationCategory *> *uiCategories = [UIApplication sharedApplication].currentUserNotificationSettings.categories;
-    if (uiCategories.count > 0) {
-        if (!mutableCategories) {
-            mutableCategories = [NSMutableSet set];
-        }
-        [mutableCategories unionSet:[MUNotificationCategory p_MUCategoriesForUICategories:uiCategories]];
-    }
-#endif
+
     return mutableCategories;
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationSettings *)settings
 {
     return [MUUserNotificationCenter p_currentNotificationSettings];
 }
-#endif
 
 
 #pragma mark - UNUserNotificationCenterDelegate
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (void)userNotificationCenter:(UNUserNotificationCenter *)center willPresentNotification:(UNNotification *)notification withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler
 {
     [self p_handleWillPresentNotification:[notification p_muNotification] withCompletionHandler:^(MUNotificationPresentationOptions options) {
@@ -507,11 +418,10 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
         completionHandler();
     }
 }
-#endif
+
 
 #pragma mark - Private
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 + (NSSet<UNNotificationCategory *> *)p_currentNotificationCategories
 {
     __block NSSet<UNNotificationCategory *> *bCategories = nil;
@@ -567,7 +477,6 @@ static MUUNAuthorizationOptions MUUNAuthorizationOptionDefault = MUUNAuthorizati
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
     return bNotification;
 }
-#endif
 
 + (void)p_applicationDidFinishLaunchingNotification:(NSNotification *)notification
 {
@@ -881,7 +790,6 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 @end
 
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @implementation UNUserNotificationCenter (MUUserNotificationsPrivate)
 
 + (void)load
@@ -905,4 +813,3 @@ static void MUSwizzleProtocolSelector(Class delegateClass, SEL delegateSelector,
 }
 
 @end
-#endif

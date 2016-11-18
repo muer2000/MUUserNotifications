@@ -8,10 +8,7 @@
 
 #import "MUNotificationContent.h"
 #import <UIKit/UIKit.h>
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
-#endif
 
 @interface MUNotificationContent ()
 
@@ -22,9 +19,7 @@
 @property (nonatomic, copy) NSString *title;
 @property (nonatomic, copy) NSDictionary *userInfo;
 @property (nonatomic, copy) MUNotificationSound *sound;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @property (nonatomic, copy) NSArray <UNNotificationAttachment *> *attachments;
-#endif
 @property (nonatomic, copy) NSString *subtitle;
 @property (nonatomic, copy) NSString *threadIdentifier;
 @property (nonatomic, copy) NSString *alertAction;
@@ -49,9 +44,7 @@
     [aCoder encodeObject:self.title forKey:NSStringFromSelector(@selector(title))];
     [aCoder encodeObject:self.userInfo forKey:NSStringFromSelector(@selector(userInfo))];
     [aCoder encodeObject:self.sound forKey:NSStringFromSelector(@selector(sound))];
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     [aCoder encodeObject:self.attachments forKey:NSStringFromSelector(@selector(attachments))];
-#endif
     [aCoder encodeObject:self.subtitle forKey:NSStringFromSelector(@selector(subtitle))];
     [aCoder encodeObject:self.threadIdentifier forKey:NSStringFromSelector(@selector(threadIdentifier))];
     [aCoder encodeObject:self.alertAction forKey:NSStringFromSelector(@selector(alertAction))];
@@ -68,9 +61,7 @@
         self.title = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(title))];
         self.userInfo = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(userInfo))];
         self.sound = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(sound))];
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
         self.attachments = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(attachments))];
-#endif
         self.subtitle = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(subtitle))];
         self.threadIdentifier = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(threadIdentifier))];
         self.alertAction = [aDecoder decodeObjectForKey:NSStringFromSelector(@selector(alertAction))];
@@ -95,9 +86,7 @@
     content.title = self.title;
     content.userInfo = self.userInfo;
     content.sound = self.sound;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
     content.attachments = self.attachments;
-#endif
     content.subtitle = self.subtitle;
     content.threadIdentifier = self.threadIdentifier;
     content.alertAction = self.alertAction;
@@ -119,9 +108,7 @@
 @dynamic title;
 @dynamic userInfo;
 @dynamic sound;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @dynamic attachments;
-#endif
 @dynamic subtitle;
 @dynamic threadIdentifier;
 @dynamic alertAction;
@@ -191,10 +178,7 @@
 @interface MUNotificationContent (MUPrivate)
 
 - (NSString *)p_soundName;
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationContent *)p_unNotificationContent;
-#endif
 
 @end
 
@@ -208,7 +192,6 @@
     return nil;
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationContent *)p_unNotificationContent
 {
     UNMutableNotificationContent *unContent = [[UNMutableNotificationContent alloc] init];
@@ -231,11 +214,9 @@
     unContent.threadIdentifier = self.threadIdentifier;
     return unContent;
 }
-#endif
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotificationContent (MUPrivate)
 
 - (MUNotificationContent *)p_muNotificationContent;
@@ -271,4 +252,3 @@
 }
 
 @end
-#endif

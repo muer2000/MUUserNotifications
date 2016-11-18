@@ -42,9 +42,7 @@ typedef NS_OPTIONS(NSUInteger, MUUNAuthorizationOptions) {
     MUUNAuthorizationOptionCarPlay  = 1 << 3
 };
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @class UNNotificationSettings;
-#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -111,10 +109,8 @@ NS_ASSUME_NONNULL_BEGIN
 /** return the app’s currently registered notification categories */
 @property (nonatomic, readonly) NSSet<MUNotificationCategory *> *categories;
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 /** return the notification settings for this app */
 @property (nonatomic, readonly) UNNotificationSettings *settings NS_AVAILABLE_IOS(10_0);
-#endif
 
 /** The delegate used to process delivered notifications */
 @property (nonatomic, weak, nullable) id <MUUserNotificationCenterDelegate> delegate;

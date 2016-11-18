@@ -8,10 +8,7 @@
 
 #import "MUNotificationAction.h"
 #import <UIKit/UIKit.h>
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
-#endif
 
 @interface MUNotificationAction ()
 
@@ -149,9 +146,7 @@
 @interface MUNotificationAction (MUPrivate)
 
 - (UIUserNotificationAction *)p_uiNotificationAction;
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationAction *)p_unNotificationAction;
-#endif
 
 @end
 
@@ -182,7 +177,6 @@
     return uiAction;
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 - (UNNotificationAction *)p_unNotificationAction
 {
     // iOS 9 text input action
@@ -199,7 +193,6 @@
                                                 title:self.title
                                               options:(UNNotificationActionOptions)self.options];
 }
-#endif
 
 @end
 
@@ -235,7 +228,6 @@
 
 @end
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotificationAction (MUPrivate)
 
 - (MUNotificationAction *)p_muNotificationAction;
@@ -260,4 +252,3 @@
 }
 
 @end
-#endif

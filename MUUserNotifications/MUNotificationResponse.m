@@ -8,10 +8,7 @@
 
 #import "MUNotificationResponse.h"
 #import "MUNotification.h"
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @import UserNotifications;
-#endif
 
 NSString *const MUNotificationDefaultActionIdentifier = @"MUNotificationDefaultActionIdentifier";
 NSString *const MUNotificationDismissActionIdentifier = @"MUNotificationDismissActionIdentifier";
@@ -140,8 +137,6 @@ NSString *const MUNotificationDismissActionIdentifier = @"MUNotificationDismissA
 
 @end
 
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 @interface UNNotification (MUPrivate)
 
 - (MUNotification *)p_muNotification;
@@ -174,4 +169,3 @@ NSString *const MUNotificationDismissActionIdentifier = @"MUNotificationDismissA
 }
 
 @end
-#endif

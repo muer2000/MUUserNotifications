@@ -39,10 +39,8 @@ NS_ASSUME_NONNULL_BEGIN
 /** The sound that will be played for the notification */
 @property (nonatomic, readonly, nullable) MUNotificationSound *sound;
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 /** Optional array of attachments */
 @property (nonatomic, readonly) NSArray <UNNotificationAttachment *> *attachments NS_AVAILABLE_IOS(10_0);
-#endif
 
 /** The subtitle of the notification */
 @property (nonatomic, readonly) NSString *subtitle NS_AVAILABLE_IOS(10_0);
@@ -81,10 +79,8 @@ NS_ASSUME_NONNULL_BEGIN
 /** The sound that will be played for the notification */
 @property (nonatomic, copy, nullable) MUNotificationSound *sound;
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 100000
 /** Optional array of attachments */
 @property (nonatomic, copy) NSArray <UNNotificationAttachment *> *attachments NS_AVAILABLE_IOS(10_0);
-#endif
 
 /** The subtitle of the notification */
 @property (nonatomic, copy) NSString *subtitle NS_AVAILABLE_IOS(10_0);
